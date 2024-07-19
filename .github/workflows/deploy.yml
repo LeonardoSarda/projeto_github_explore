@@ -1,27 +1,57 @@
-name: Deploy to GitHub Pages
+name: Build & deploy
 
 on:
     push:
         branches:
-            - main # ou a branch principal do seu repositório
+            - main
+    pull_request:
+        branches:
+            - main
 
 jobs:
     build:
+        name: Build
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
 
-            - name: Set up Node.js
+            - name: Install Node.js
               uses: actions/setup-node@v2
               with:
-                  node-version: '20' # ou a versão do Node.js que você está usando
+                  node-version: 20 # Atualizado para a versão mais recente, se necessário
 
-            - name: Install dependencies
-              run: |
-                  npm install
-                  npm run build
+            - name: Install Yarn
+              run: npm install -g yarn
+
+            - name: Install Yarn packages
+              run: yarn install
+
+            - name: Build project
+              run: yarn build
+
+            - name: Run tests
+              run: yarn test
+
+            - name: Upload production-ready build files
+              uses: actions/upload-artifact@v2
+              with:
+                  name: production-files
+                  path: ./build
+
+    deploy:
+        name: Deploy
+        needs: build
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+            - name: Download artifact
+              uses: actions/download-artifact@v2
+              with:
+                  name: production-files
+                  path: ./build
 
             - name: Deploy to GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
